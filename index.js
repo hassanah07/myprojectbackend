@@ -45,3 +45,4 @@ app.listen(port, () => {
 
 app.use("/api/auth/admin", require("./routes/auth"));
 app.use("/api/auth/worker", require("./routes/spraying"));
+app.use("/api/msg", require("./routes/contact"));

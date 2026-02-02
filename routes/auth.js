@@ -68,9 +68,6 @@ router.post("/createadmin", fetchAdmin, async (req, res) => {
       } catch (error) {
         res.status(500).json({ msg: "E-Mail Server Error", type: "error" });
       }
-      // res
-      //   .status(201)
-      //   .json({ status: true, msg: "account created!", admin, randPassword });
     }
   } catch (error) {
     res.json(error);
@@ -115,6 +112,41 @@ router.post("/verify", fetchAdmin, async (req, res) => {
     res.json({ status: true });
   } catch (error) {
     res.json({ error, msg: "Internal Server Error", status: false });
+  }
+});
+router.post("/changepassword", fetchAdmin, async (req, res) => {
+  const userid = req.admin.id;
+  try {
+    let admin = await Admin.findById(userid);
+    if (!admin) {
+      return res.status(400).json({ msg: "Invalid Access" });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    admin = await Admin.findByIdAndUpdate(userid, {
+      $set: {
+        password: hashedPassword,
+      },
+    });
+    const isMatch = await bcrypt.compare(password, admin.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid Credentials1" });
+    }
+    // create and assign a token
+    const payload = {
+      admin: {
+        id: admin.id,
+      },
+    };
+    const authtoken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+    res.status(200).json({ authtoken, status: true });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ status: false, msg: "Internal Server Error", err });
   }
 });
 
